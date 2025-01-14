@@ -14,9 +14,11 @@
 
 #pragma once
 
+#include <chrono>
 #include <concepts>
 
 #include "sparrow/types/data_type.hpp"
+#include "sparrow/types/temporal_types.hpp"
 #include "sparrow/utils/nullable.hpp"
 #include "sparrow/utils/vector_view.hpp"
 
@@ -60,15 +62,6 @@ namespace sparrow
         static constexpr data_type type_id = data_type::BINARY;
         using value_type = std::vector<byte_t>;
         using const_reference = vector_view<const byte_t>;
-    };
-
-    template <>
-    struct arrow_traits<timestamp> : common_native_types_traits<timestamp>
-    {
-        static constexpr data_type type_id = data_type::TIMESTAMP;
-        // By default duration in milliseconds, but see
-        // https://arrow.apache.org/docs/dev/format/CDataInterface.html#data-type-description-format-strings
-        // for other possibilities
     };
 
     template <>
@@ -117,6 +110,142 @@ namespace sparrow
         static constexpr data_type type_id = data_type::DECIMAL256;
         using value_type = decimal<int256_t>;
         using const_reference = decimal<int256_t>;
+    };
+
+    template <>
+    struct arrow_traits<std::chrono::year_month_day>
+    {
+        static constexpr data_type type_id = data_type::DATE_DAYS;
+        using value_type = std::chrono::year_month_day;
+        using const_reference = std::chrono::year_month_day;
+    };
+
+    template <>
+    struct arrow_traits<std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds>>
+    {
+        static constexpr data_type type_id = data_type::DATE_MILLISECONDS;
+        using value_type = std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds>;
+        using const_reference = std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds>;
+    };
+
+    template <>
+    struct arrow_traits<std::chrono::duration<int32_t>>
+    {
+        static constexpr data_type type_id = data_type::TIME_SECONDS;
+        using value_type = std::chrono::duration<int32_t>;
+        using const_reference = std::chrono::duration<int32_t>;
+    };
+
+    template <>
+    struct arrow_traits<std::chrono::duration<int32_t, std::milli>>
+    {
+        static constexpr data_type type_id = data_type::TIME_MILLISECONDS;
+        using value_type = std::chrono::duration<int32_t, std::milli>;
+        using const_reference = std::chrono::duration<int32_t, std::milli>;
+    };
+
+    template <>
+    struct arrow_traits<std::chrono::hh_mm_ss<std::chrono::microseconds>>
+    {
+        static constexpr data_type type_id = data_type::TIME_MICROSECONDS;
+        using value_type = std::chrono::hh_mm_ss<std::chrono::microseconds>;
+        using const_reference = std::chrono::hh_mm_ss<std::chrono::microseconds>;
+    };
+
+    template <>
+    struct arrow_traits<std::chrono::hh_mm_ss<std::chrono::nanoseconds>>
+    {
+        static constexpr data_type type_id = data_type::TIME_NANOSECONDS;
+        using value_type = std::chrono::hh_mm_ss<std::chrono::nanoseconds>;
+        using const_reference = std::chrono::hh_mm_ss<std::chrono::nanoseconds>;
+    };
+
+    template <>
+    struct arrow_traits<timestamp<std::chrono::seconds>>
+    {
+        static constexpr data_type type_id = data_type::TIMESTAMP_SECONDS;
+        using value_type = timestamp<std::chrono::milliseconds>;
+        using const_reference = timestamp<std::chrono::milliseconds>;
+    };
+
+    template <>
+    struct arrow_traits<timestamp<std::chrono::milliseconds>>
+    {
+        static constexpr data_type type_id = data_type::TIMESTAMP_MILLISECONDS;
+        using value_type = timestamp<std::chrono::milliseconds>;
+        using const_reference = timestamp<std::chrono::milliseconds>;
+    };
+
+    template <>
+    struct arrow_traits<timestamp<std::chrono::microseconds>>
+    {
+        static constexpr data_type type_id = data_type::TIMESTAMP_MICROSECONDS;
+        using value_type = timestamp<std::chrono::microseconds>;
+        using const_reference = timestamp<std::chrono::microseconds>;
+    };
+
+    template <>
+    struct arrow_traits<timestamp<std::chrono::nanoseconds>>
+    {
+        static constexpr data_type type_id = data_type::TIMESTAMP_NANOSECONDS;
+        using value_type = timestamp<std::chrono::nanoseconds>;
+        using const_reference = timestamp<std::chrono::nanoseconds>;
+    };
+
+    template <>
+    struct arrow_traits<std::chrono::seconds>
+    {
+        static constexpr data_type type_id = data_type::DURATION_SECONDS;
+        using value_type = std::chrono::seconds;
+        using const_reference = std::chrono::seconds;
+    };
+
+    template <>
+    struct arrow_traits<std::chrono::milliseconds>
+    {
+        static constexpr data_type type_id = data_type::DURATION_MILLISECONDS;
+        using value_type = std::chrono::milliseconds;
+        using const_reference = std::chrono::milliseconds;
+    };
+
+    template <>
+    struct arrow_traits<std::chrono::microseconds>
+    {
+        static constexpr data_type type_id = data_type::DURATION_MICROSECONDS;
+        using value_type = std::chrono::microseconds;
+        using const_reference = std::chrono::microseconds;
+    };
+
+    template <>
+    struct arrow_traits<std::chrono::nanoseconds>
+    {
+        static constexpr data_type type_id = data_type::DURATION_NANOSECONDS;
+        using value_type = std::chrono::nanoseconds;
+        using const_reference = std::chrono::nanoseconds;
+    };
+
+    template <>
+    struct arrow_traits<std::chrono::months>
+    {
+        static constexpr data_type type_id = data_type::INTERVAL_MONTHS;
+        using value_type = std::chrono::months;
+        using const_reference = std::chrono::months;
+    };
+
+    template <>
+    struct arrow_traits<sparrow::day_time_interval>
+    {
+        static constexpr data_type type_id = data_type::INTERVAL_DAYS_TIME;
+        using value_type = sparrow::day_time_interval;
+        using const_reference = sparrow::day_time_interval;
+    };
+
+    template <>
+    struct arrow_traits<sparrow::month_day_nanoseconds_interval>
+    {
+        static constexpr data_type type_id = data_type::INTERVAL_MONTH_DAY_NANOSECONDS;
+        using value_type = sparrow::month_day_nanoseconds_interval;
+        using const_reference = sparrow::month_day_nanoseconds_interval;
     };
 
     namespace detail

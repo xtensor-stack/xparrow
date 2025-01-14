@@ -46,8 +46,8 @@ namespace sparrow
         using array_type = primitive_array<T>;
 
         using inner_value_type = T;
-        using inner_reference = T&;
-        using inner_const_reference = const T&;
+        using inner_reference = inner_value_type&;
+        using inner_const_reference = const inner_value_type&;
         using pointer = inner_value_type*;
         using const_pointer = const inner_value_type*;
 
@@ -250,9 +250,10 @@ namespace sparrow
 
         buffer_adaptor<T, buffer<uint8_t>&> get_data_buffer();
 
-
         static constexpr size_type DATA_BUFFER_INDEX = 1;
         friend class run_end_encoded_array;
+        template <typename>
+        friend class timestamp_array;
         friend base_type;
         friend base_type::base_type;
         friend base_type::base_type::base_type;
@@ -278,8 +279,7 @@ namespace sparrow
                 data_type::INT64,
                 data_type::HALF_FLOAT,
                 data_type::FLOAT,
-                data_type::DOUBLE,
-                data_type::TIMESTAMP
+                data_type::DOUBLE
             };
             return std::find(dtypes.cbegin(), dtypes.cend(), dt) != dtypes.cend();
         }
@@ -289,7 +289,6 @@ namespace sparrow
     primitive_array<T>::primitive_array(arrow_proxy proxy)
         : base_type(std::move(proxy))
     {
-        SPARROW_ASSERT_TRUE(this->get_arrow_proxy().data_type() == arrow_traits<T>::type_id);
     }
 
     template <primitive_type T>
@@ -439,6 +438,7 @@ namespace sparrow
     auto primitive_array<T>::value(size_type i) -> inner_reference
     {
         SPARROW_ASSERT_TRUE(i < this->size());
+        [[maybe_unused]] auto val = data()[i];
         return data()[i];
     }
 
@@ -446,6 +446,7 @@ namespace sparrow
     auto primitive_array<T>::value(size_type i) const -> inner_const_reference
     {
         SPARROW_ASSERT_TRUE(i < this->size());
+        [[maybe_unused]] auto val = data()[i];
         return data()[i];
     }
 
