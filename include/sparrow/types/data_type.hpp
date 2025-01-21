@@ -49,11 +49,9 @@ namespace date = std::chrono;
 #include <concepts>
 #include <cstdint>
 #include <cstring>
-#include <sstream>
 #include <string>
 
 #include "sparrow/config/config.hpp"
-#include "sparrow/utils/contracts.hpp"
 #include "sparrow/utils/decimal.hpp"
 #include "sparrow/utils/large_int.hpp"
 #include "sparrow/utils/mp_utils.hpp"
@@ -120,7 +118,8 @@ namespace sparrow
     // For now, we use HowardHinnant/date as a replacement if we are compiling with libc++.
     // TODO: use the following once libc++ has full support for P0355R7.
     // using timestamp = std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds>;
-    using timestamp = date::zoned_time<std::chrono::nanoseconds>;
+    template <class Duration>
+    using timestamp = date::zoned_time<Duration>;
 
     // We need to be sure the current target platform is setup to support correctly these types.
     static_assert(sizeof(float16_t) == 2);
@@ -167,9 +166,6 @@ namespace sparrow
         // Variable-length bytes (no guarantee of UTF8-ness)
         BINARY = 15,
         LARGE_BINARY = 16,
-        // Number of nanoseconds since the UNIX epoch with an optional timezone.
-        // See: https://arrow.apache.org/docs/python/timestamps.html#timestamps
-        TIMESTAMP = 18,
         LIST = 19,
         LARGE_LIST = 20,
         LIST_VIEW = 21,
@@ -186,7 +182,26 @@ namespace sparrow
         DECIMAL64,
         DECIMAL128,
         DECIMAL256,
-        FIXED_WIDTH_BINARY
+        FIXED_WIDTH_BINARY,
+        DATE_DAYS,
+        DATE_MILLISECONDS,
+        TIME_SECONDS,
+        TIME_MILLISECONDS,
+        TIME_MICROSECONDS,
+        TIME_NANOSECONDS,
+        // Number of nanoseconds since the UNIX epoch with an optional timezone.
+        // See: https://arrow.apache.org/docs/python/timestamps.html#timestamps
+        TIMESTAMP_SECONDS,
+        TIMESTAMP_MILLISECONDS,
+        TIMESTAMP_MICROSECONDS,
+        TIMESTAMP_NANOSECONDS,
+        DURATION_SECONDS,
+        DURATION_MILLISECONDS,
+        DURATION_MICROSECONDS,
+        DURATION_NANOSECONDS,
+        INTERVAL_MONTHS,
+        INTERVAL_DAYS_TIME,
+        INTERVAL_MONTH_DAY_NANOSECONDS
     };
 
     // helper function to check if a string is all digits
@@ -266,7 +281,74 @@ namespace sparrow
         // TODO: add propper timestamp support below
         else if (format.starts_with("t"))
         {
-            return data_type::TIMESTAMP;
+            if (format == "tdD")
+            {
+                return data_type::DATE_DAYS;
+            }
+            else if (format == "tdm")
+            {
+                return data_type::DATE_MILLISECONDS;
+            }
+            else if (format == "tts")
+            {
+                return data_type::TIME_SECONDS;
+            }
+            else if (format == "ttm")
+            {
+                return data_type::TIME_MILLISECONDS;
+            }
+            else if (format == "ttu")
+            {
+                return data_type::TIME_MICROSECONDS;
+            }
+            else if (format == "ttn")
+            {
+                return data_type::TIME_NANOSECONDS;
+            }
+            else if (format.starts_with("tss:"))
+            {
+                return data_type::TIMESTAMP_SECONDS;
+            }
+            else if (format.starts_with("tsm:"))
+            {
+                return data_type::TIMESTAMP_MILLISECONDS;
+            }
+            else if (format.starts_with("tsu:"))
+            {
+                return data_type::TIMESTAMP_MICROSECONDS;
+            }
+            else if (format.starts_with("tsn:"))
+            {
+                return data_type::TIMESTAMP_NANOSECONDS;
+            }
+            else if (format == "tDs")
+            {
+                return data_type::DURATION_SECONDS;
+            }
+            else if (format == "tDm")
+            {
+                return data_type::DURATION_MILLISECONDS;
+            }
+            else if (format == "tDu")
+            {
+                return data_type::DURATION_MICROSECONDS;
+            }
+            else if (format == "tDn")
+            {
+                return data_type::DURATION_NANOSECONDS;
+            }
+            else if (format == "tiM")
+            {
+                return data_type::INTERVAL_MONTHS;
+            }
+            else if (format == "tiD")
+            {
+                return data_type::INTERVAL_DAYS_TIME;
+            }
+            else if (format == "tin")
+            {
+                return data_type::INTERVAL_MONTH_DAY_NANOSECONDS;
+            }
         }
         else if (format == "+l")
         {
@@ -445,8 +527,40 @@ namespace sparrow
                 return "z";
             case data_type::LARGE_BINARY:
                 return "Z";
-            case data_type::TIMESTAMP:
+            case data_type::DATE_DAYS:
+                return "tdD";
+            case data_type::DATE_MILLISECONDS:
+                return "tdm";
+            case data_type::TIME_SECONDS:
+                return "tts";
+            case data_type::TIME_MILLISECONDS:
+                return "ttm";
+            case data_type::TIME_MICROSECONDS:
+                return "ttu";
+            case data_type::TIME_NANOSECONDS:
+                return "ttn";
+            case data_type::TIMESTAMP_SECONDS:
+                return "tss:";
+            case data_type::TIMESTAMP_MILLISECONDS:
+                return "tsm:";
+            case data_type::TIMESTAMP_MICROSECONDS:
+                return "tsu:";
+            case data_type::TIMESTAMP_NANOSECONDS:
+                return "tsn:";
+            case data_type::DURATION_SECONDS:
+                return "tDs";
+            case data_type::DURATION_MILLISECONDS:
                 return "tDm";
+            case data_type::DURATION_MICROSECONDS:
+                return "tDu";
+            case data_type::DURATION_NANOSECONDS:
+                return "tDn";
+            case data_type::INTERVAL_MONTHS:
+                return "tiM";
+            case data_type::INTERVAL_DAYS_TIME:
+                return "tiD";
+            case data_type::INTERVAL_MONTH_DAY_NANOSECONDS:
+                return "tin";
             case data_type::LIST:
                 return "+l";
             case data_type::LARGE_LIST:
@@ -520,7 +634,7 @@ namespace sparrow
         float64_t,
         std::string,
         std::vector<byte_t>,
-        sparrow::timestamp,
+        sparrow::timestamp<std::chrono::seconds>,
         // TODO: add missing fundamental types here
         list_value,
         struct_value,
@@ -537,12 +651,9 @@ namespace sparrow
     template <class T>
     concept is_arrow_base_type = mpl::contains<T>(all_base_types);
 
-
     /// is arrow base type or arrow compound type (list<T>, struct<T> etc.)
     // template <class T>
     // concept is_arrow_base_type_or_compound = is_arrow_base_type<T> || is_list_value_v<T>;
-
-
     using all_base_types_extended_t = mpl::append_t<all_base_types_t, char, std::string_view>;
 
     /// Type list of every C++ representation types supported by default, in order matching `data_type`
@@ -754,8 +865,40 @@ namespace std
                         return "Binary";
                     case LARGE_BINARY:
                         return "Large binary";
-                    case TIMESTAMP:
-                        return "Timestamp";
+                    case DATE_DAYS:
+                        return "Days";
+                    case DATE_MILLISECONDS:
+                        return "Milliseconds";
+                    case TIME_SECONDS:
+                        return "Seconds";
+                    case TIME_MILLISECONDS:
+                        return "Milliseconds";
+                    case TIME_MICROSECONDS:
+                        return "Microseconds";
+                    case TIME_NANOSECONDS:
+                        return "Nanoseconds";
+                    case TIMESTAMP_SECONDS:
+                        return "Timestamp seconds";
+                    case TIMESTAMP_MILLISECONDS:
+                        return "Timestamp milliseconds";
+                    case TIMESTAMP_MICROSECONDS:
+                        return "Timestamp microseconds";
+                    case TIMESTAMP_NANOSECONDS:
+                        return "Timestamp nanoseconds";
+                    case DURATION_SECONDS:
+                        return "Duration seconds";
+                    case DURATION_MILLISECONDS:
+                        return "Duration milliseconds";
+                    case DURATION_MICROSECONDS:
+                        return "Duration microseconds";
+                    case DURATION_NANOSECONDS:
+                        return "Duration nanoseconds";
+                    case INTERVAL_MONTHS:
+                        return "Interval months";
+                    case INTERVAL_DAYS_TIME:
+                        return "Interval days time";
+                    case INTERVAL_MONTH_DAY_NANOSECONDS:
+                        return "Interval month day nanoseconds";
                     case LIST:
                         return "List";
                     case LARGE_LIST:

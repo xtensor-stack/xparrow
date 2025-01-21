@@ -120,7 +120,7 @@ namespace sparrow
                     return detail::make_wrapper_ptr<dense_union_array>(std::move(proxy));
                 case data_type::SPARSE_UNION:
                     return detail::make_wrapper_ptr<sparse_union_array>(std::move(proxy));
-                case data_type::TIMESTAMP:
+                // case data_type::TIMESTAMP: // TODO
                 case data_type::MAP:
                 case data_type::DECIMAL32:
                     return detail::make_wrapper_ptr<decimal_32_array>(std::move(proxy));
